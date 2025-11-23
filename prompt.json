@@ -1,0 +1,191 @@
+{
+  "stack": {
+    "frontend": "Svelte (Vite)",
+    "backend": "FastAPI",
+    "database": "MySQL or PostgreSQL",
+    "ui_library": "Skeleton UI (Svelte version)"
+  },
+  "ui_library": {
+    "recommended": {
+      "name": "Skeleton UI",
+      "reason": "Skeleton works perfectly with standard Svelte + Vite, offering Tailwind-based UI components, themes, dark mode, and dashboard-friendly layouts.",
+      "benefits": [
+        "Svelte-native components",
+        "Full compatibility with Vite builds",
+        "Dark mode + theming engine",
+        "Responsive dashboard components",
+        "Tables, charts, cards, forms, alerts",
+        "Active ecosystem"
+      ]
+    },
+    "alternatives": [
+      {
+        "name": "Flowbite-Svelte",
+        "notes": "Good component library but more browser-focused; Skeleton is cleaner for Svelte SPAs."
+      },
+      {
+        "name": "shadcn-svelte",
+        "notes": "Modern UI but still maturing; Skeleton is more stable for production dashboards."
+      },
+      {
+        "name": "Smelte",
+        "notes": "Material Design look; older but usable."
+      }
+    ]
+  },
+  "TOON": {
+    "T": {
+      "title": "Technical Overview",
+      "system_summary": "WebHealth is a full monitoring and incident-management system built using FastAPI and a Svelte SPA powered by Skeleton UI. It executes scheduled checks, logs incidents, provides analytics, and integrates via heartbeats, webhooks, and public APIs.",
+      "monitoring_dimensions": [
+        "HTTP Health Checks (status codes, latency, retries)",
+        "Regional Probes (multi-region performance)",
+        "Synthetic User Journeys (step-by-step tracking)",
+        "SSL Certificate Monitoring (expiry, mismatches)",
+        "Heartbeat Monitoring (ping endpoints)"
+      ],
+      "analytics_features": [
+        "Real-time response graphs",
+        "Uptime calculations (daily/weekly/30-day)",
+        "Incident grouping",
+        "MTTD and MTTR metrics",
+        "Latency inspection per region"
+      ],
+      "core_technologies": {
+        "frontend": "Svelte + Vite + Skeleton UI",
+        "backend": "FastAPI with async logic",
+        "notifications": ["Email", "Webhook"],
+        "scheduling": "Linux Cron or CPanel Cron",
+        "external_integrations": ["Heartbeat URLs", "Webhook delivery", "Public REST API"]
+      }
+    },
+    "O_Operational": {
+      "title": "Operational Flow",
+      "steps": {
+        "scheduled_checks": "Cron jobs trigger FastAPI check runner, performing async health, SSL, regional, and synthetic checks.",
+        "incident_lifecycle": [
+          "Detect incident",
+          "Open or update incident log",
+          "Trigger notifications (with cooldown)",
+          "Auto-close when monitor recovers"
+        ],
+        "frontend_data_flow": [
+          "Svelte SPA fetches FastAPI endpoints",
+          "State stores update live charts and cards",
+          "Polling refreshes data every X seconds"
+        ],
+        "external_integrations": [
+          "Heartbeat URLs from external systems",
+          "Webhook notifications to 3rd parties",
+          "Public API for dashboards or integrations"
+        ]
+      }
+    },
+    "O_Organizational": {
+      "title": "Organizational Structure",
+      "backend_fastapi": {
+        "routers": [
+          "/monitors",
+          "/checks",
+          "/incidents",
+          "/regions",
+          "/analytics",
+          "/heartbeats",
+          "/webhooks",
+          "/auth"
+        ],
+        "services": [
+          "http_service.py",
+          "ssl_service.py",
+          "synthetic_service.py",
+          "region_service.py",
+          "incident_service.py",
+          "notification_service.py"
+        ],
+        "background_tasks": [
+          "check_runner.py",
+          "incident_evaluator.py",
+          "cron_worker.py"
+        ],
+        "models": [
+          "Monitor",
+          "Check",
+          "Incident",
+          "EscalationRule",
+          "Region",
+          "HeartbeatLog",
+          "User",
+          "NotificationLog"
+        ],
+        "security": {
+          "auth": "JWT (access + refresh tokens)",
+          "roles": ["admin", "manager", "viewer"]
+        }
+      },
+      "frontend_svelte": {
+        "routes": [
+          "/",
+          "/monitors",
+          "/monitors/:id",
+          "/incidents",
+          "/incidents/:id",
+          "/settings",
+          "/settings/escalations",
+          "/settings/webhooks",
+          "/login"
+        ],
+        "components": [
+          "Header",
+          "Sidebar",
+          "MonitorCard",
+          "ChartCard",
+          "LatencyMap",
+          "SSLExpiryWidget",
+          "IncidentTimeline",
+          "DataTable",
+          "Modal",
+          "FormField",
+          "Badge"
+        ],
+        "state_management": "Writable stores (Svelte stores)",
+        "layouts": [
+          "DashboardLayout",
+          "AuthLayout"
+        ]
+      }
+    },
+    "N_Navigation": {
+      "title": "Navigation Guide",
+      "sections": {
+        "dashboard": [
+          "Global uptime overview",
+          "Real-time response charts",
+          "Active incidents list",
+          "Regional latency heatmap",
+          "SSL expiry countdown"
+        ],
+        "monitor_pages": [
+          "Monitor status",
+          "Recent checks",
+          "Historical response graphs",
+          "Synthetic journey steps",
+          "Threshold/config pages"
+        ],
+        "incident_center": [
+          "Active incidents",
+          "History view",
+          "Root cause details",
+          "Escalation timeline",
+          "Notification logs"
+        ],
+        "settings": [
+          "Escalation rules",
+          "Webhook URLs",
+          "API keys",
+          "Health thresholds",
+          "Heartbeat tokens"
+        ]
+      }
+    }
+  }
+}

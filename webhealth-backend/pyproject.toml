@@ -1,0 +1,31 @@
+[project]
+name = "webhealth-backend"
+version = "0.1.0"
+description = "WebHealth monitoring and incident backend"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "alembic>=1.17.2",
+    "asyncpg>=0.30.0",
+    "email-validator>=2.3.0",
+    "fastapi>=0.121.3",
+    "httpx>=0.28.1",
+    "passlib[bcrypt]>=1.7.4",
+    "pydantic>=2.12.4",
+    "pyjwt>=2.10.1",
+    "python-multipart>=0.0.20",
+    "sqlalchemy[asyncio]>=2.0.44",
+    "uvicorn>=0.38.0",
+]
+
+[project.optional-dependencies]
+dev = []
+
+[tool.uv]
+package = true
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
