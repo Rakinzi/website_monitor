@@ -5,7 +5,10 @@ import os
 from functools import lru_cache
 from typing import Any, Optional
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, field_validator
+
+load_dotenv()
 
 
 class Settings(BaseModel):
@@ -26,6 +29,12 @@ class Settings(BaseModel):
     jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
     email_from: Optional[str] = os.getenv("EMAIL_FROM")
     webhook_timeout_seconds: int = int(os.getenv("WEBHOOK_TIMEOUT", "5"))
+    mail_server: str = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+    mail_port: int = int(os.getenv("MAIL_PORT", "587"))
+    mail_use_tls: bool = os.getenv("MAIL_USE_TLS", "True").lower() == "true"
+    mail_username: Optional[str] = os.getenv("MAIL_USERNAME", "leightonsilver@gmail.com")
+    mail_password: Optional[str] = os.getenv("MAIL_PASSWORD", "qxfjyciwtityhvrz")
+    mail_default_sender: Optional[str] = os.getenv("MAIL_DEFAULT_SENDER", "silverrakinzi@gmail.com")
 
     @field_validator("database_url")
     @classmethod
