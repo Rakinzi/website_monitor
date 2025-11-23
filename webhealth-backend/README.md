@@ -20,3 +20,18 @@ uv run alembic revision -m "..." --autogenerate  # create new migration (DB requ
 ```
 
 The current head introduces the `security_audits` table plus monitor security columns for the passive-check pipeline.
+
+## Email Notifications
+
+Notifications now send real emails via SMTP. Configure the following environment variables (defaults match the Gmail account you provided):
+
+```
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USERNAME=leightonsilver@gmail.com
+MAIL_PASSWORD=qxfjyciwtityhvrz
+MAIL_DEFAULT_SENDER=silverrakinzi@gmail.com
+```
+
+Set them before starting FastAPI so `NotificationService` can deliver messages to your alert recipients.

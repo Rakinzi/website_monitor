@@ -157,14 +157,12 @@
 
           <button
             type="submit"
-            class="btn variant-filled-primary w-full shadow-lg shadow-primary-500/20 text-lg py-3"
+            class="btn bg-gradient-to-br from-primary-500 to-secondary-500 text-white w-full shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all text-lg py-3"
             disabled={isLoading}
           >
             {#if isLoading}
-              <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-              </svg>
-              <span>Signing in...</span>
+              <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span class="ml-2">Signing in...</span>
             {:else}
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>

@@ -17,8 +17,10 @@ src/app/background/__init__.py
 src/app/background/cron_worker.py
 src/app/background/incident_evaluator.py
 src/app/background/runner.py
+src/app/background/security_scheduler.py
 src/app/core/__init__.py
 src/app/core/config.py
+src/app/core/cybersecurity_checks.py
 src/app/core/security.py
 src/app/db/__init__.py
 src/app/db/base.py
@@ -31,6 +33,7 @@ src/app/models/heartbeat.py
 src/app/models/incident.py
 src/app/models/monitor.py
 src/app/models/region.py
+src/app/models/security_audit.py
 src/app/models/user.py
 src/app/schemas/__init__.py
 src/app/schemas/analytics_schemas.py
@@ -40,6 +43,8 @@ src/app/schemas/heartbeat_schemas.py
 src/app/schemas/incident_schemas.py
 src/app/schemas/monitor_schemas.py
 src/app/schemas/region_schemas.py
+src/app/schemas/security_audit_schemas.py
+src/app/schemas/security_schemas.py
 src/app/schemas/user_schemas.py
 src/app/schemas/webhook_schemas.py
 src/app/services/__init__.py
@@ -48,8 +53,11 @@ src/app/services/incident_service.py
 src/app/services/monitor_service.py
 src/app/services/notification_service.py
 src/app/services/region_service.py
+src/app/services/security_audit_service.py
+src/app/services/security_check_service.py
 src/app/services/ssl_service.py
 src/app/services/synthetic_service.py
+src/app/services/user_service.py
 src/webhealth_backend.egg-info/PKG-INFO
 src/webhealth_backend.egg-info/SOURCES.txt
 src/webhealth_backend.egg-info/dependency_links.txt
