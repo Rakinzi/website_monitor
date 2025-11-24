@@ -4,7 +4,7 @@
 import { ACCESS_COOKIE, REFRESH_COOKIE } from '../constants/auth';
 import { deleteCookie, getCookie } from '../utils/cookies';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 interface RequestOptions {
   method?: string;
@@ -50,67 +50,72 @@ async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Pr
 
 // Auth API
 export const authApi = {
+  register: (email: string, password: string, role: 'admin' | 'maintainer' | 'viewer' = 'viewer') =>
+    apiRequest('/api/auth/register', {
+      method: 'POST',
+      body: { email, password, role },
+    }),
   login: (email: string, password: string) =>
-    apiRequest<{ user: any; access_token: string; refresh_token: string }>('/auth/login', {
+    apiRequest<{ user: any; access_token: string; refresh_token: string }>('/api/auth/login', {
       method: 'POST',
       body: { email, password },
     }),
 
-  logout: () => apiRequest('/auth/logout', { method: 'POST' }),
+  logout: () => apiRequest('/api/auth/logout', { method: 'POST' }),
 
   refreshToken: () =>
-    apiRequest<{ access_token: string; refresh_token: string }>('/auth/refresh', {
+    apiRequest<{ access_token: string; refresh_token: string }>('/api/auth/refresh', {
       method: 'POST',
       body: { refresh_token: getCookie(REFRESH_COOKIE) },
     }),
 
-  me: () => apiRequest<any>('/auth/me'),
+  me: () => apiRequest<any>('/api/auth/me'),
 };
 
 // Monitors API
 export const monitorsApi = {
-  getAll: () => apiRequest<any[]>('/monitors'),
+  getAll: () => apiRequest<any[]>('/api/monitors/'),
 
-  getById: (id: string) => apiRequest<any>(`/monitors/${id}`),
+  getById: (id: string) => apiRequest<any>(`/api/monitors/${id}`),
 
   create: (data: any) =>
-    apiRequest<any>('/monitors', {
+    apiRequest<any>('/api/monitors/', {
       method: 'POST',
       body: data,
     }),
 
   update: (id: string, data: any) =>
-    apiRequest<any>(`/monitors/${id}`, {
+    apiRequest<any>(`/api/monitors/${id}`, {
       method: 'PUT',
       body: data,
     }),
 
   delete: (id: string) =>
-    apiRequest(`/monitors/${id}`, {
+    apiRequest(`/api/monitors/${id}`, {
       method: 'DELETE',
     }),
 };
 
 // Checks API
 export const checksApi = {
-  getByMonitor: (monitorId: string) => apiRequest<any[]>(`/checks?monitor_id=${monitorId}`),
+  getByMonitor: (monitorId: string) => apiRequest<any[]>(`/api/checks?monitor_id=${monitorId}`),
 
-  getRecent: (limit: number = 10) => apiRequest<any[]>(`/checks/recent?limit=${limit}`),
+  getRecent: (limit: number = 10) => apiRequest<any[]>(`/api/checks/recent?limit=${limit}`),
 };
 
 // Incidents API
 export const incidentsApi = {
-  getAll: () => apiRequest<any[]>('/incidents'),
+  getAll: () => apiRequest<any[]>('/api/incidents/'),
 
-  getById: (id: string) => apiRequest<any>(`/incidents/${id}`),
+  getById: (id: string) => apiRequest<any>(`/api/incidents/${id}`),
 
   acknowledge: (id: string) =>
-    apiRequest(`/incidents/${id}/acknowledge`, {
+    apiRequest(`/api/incidents/${id}/acknowledge`, {
       method: 'POST',
     }),
 
   resolve: (id: string) =>
-    apiRequest(`/incidents/${id}/resolve`, {
+    apiRequest(`/api/incidents/${id}/resolve`, {
       method: 'POST',
     }),
 };
@@ -119,36 +124,61 @@ export const incidentsApi = {
 export const analyticsApi = {
   getUptime: (monitorId?: string) => {
     const query = monitorId ? `?monitor_id=${monitorId}` : '';
-    return apiRequest<any>(`/analytics/uptime${query}`);
+    return apiRequest<any>(`/api/analytics/uptime${query}`);
   },
 
   getResponseTimes: (monitorId?: string) => {
     const query = monitorId ? `?monitor_id=${monitorId}` : '';
-    return apiRequest<any>(`/analytics/response-times${query}`);
+    return apiRequest<any>(`/api/analytics/response-times${query}`);
   },
 };
 
 // Settings/Configuration API
 export const settingsApi = {
-  get: () => apiRequest<any>('/settings'),
+  get: () => apiRequest<any>('/api/settings'),
 
   update: (data: any) =>
-    apiRequest<any>('/settings', {
+    apiRequest<any>('/api/settings', {
       method: 'PUT',
       body: data,
     }),
 
+  testWebhook: (url?: string) =>
+    apiRequest('/api/settings/webhook/test', {
+      method: 'POST',
+      body: { url },
+    }),
+
+  getEscalationRules: () => apiRequest<any[]>('/api/settings/escalations'),
+
+  createEscalationRule: (data: any) =>
+    apiRequest<any>('/api/settings/escalations', {
+      method: 'POST',
+      body: data,
+    }),
+
+  updateEscalationRule: (id: number, data: any) =>
+    apiRequest<any>(`/api/settings/escalations/${id}`, {
+      method: 'PUT',
+      body: data,
+    }),
+
+  deleteEscalationRule: (id: number) =>
+    apiRequest(`/api/settings/escalations/${id}`, {
+      method: 'DELETE',
+    }),
+
   // Webhooks
-  getWebhooks: () => apiRequest<any[]>('/webhooks'),
+  getWebhooks: () => apiRequest<any[]>('/api/webhooks'),
 
   createWebhook: (data: any) =>
-    apiRequest<any>('/webhooks', {
+    apiRequest<any>('/api/webhooks', {
       method: 'POST',
       body: data,
     }),
 
   deleteWebhook: (id: string) =>
-    apiRequest(`/webhooks/${id}`, {
+    apiRequest(`/api/webhooks/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -164,17 +194,19 @@ export interface SecurityAuditResponse {
 
 export const securityApi = {
   runMonitorSecurityCheck: (monitorId: number) =>
-    apiRequest<SecurityAuditResponse>(`/checks/security/monitors/${monitorId}`, {
+    apiRequest<SecurityAuditResponse>(`/api/checks/security/monitors/${monitorId}`, {
       method: 'POST',
     }),
   latestMonitorSecurityCheck: (monitorId: number) =>
-    apiRequest<SecurityAuditResponse>(`/checks/security/monitors/${monitorId}/latest`),
+    apiRequest<SecurityAuditResponse | null>(
+      `/api/checks/security/monitors/${monitorId}/latest`
+    ),
   listMonitorSecurityAudits: (monitorId: number, params?: { limit?: number; offset?: number }) => {
     const query = new URLSearchParams();
     if (params?.limit) query.set('limit', params.limit.toString());
     if (params?.offset) query.set('offset', params.offset.toString());
     const suffix = query.toString() ? `?${query.toString()}` : '';
-    return apiRequest<SecurityAuditResponse[]>(`/checks/security/monitors/${monitorId}/audits${suffix}`);
+    return apiRequest<SecurityAuditResponse[]>(`/api/checks/security/monitors/${monitorId}/audits${suffix}`);
   },
 };
 

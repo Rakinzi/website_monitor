@@ -1,251 +1,291 @@
 <script lang="ts">
-  // Mock data - will be replaced with API calls
-  const uptimeStats = {
-    overall: 99.8,
-    today: 100,
-    week: 99.9,
-    month: 99.8,
-  };
+  import { onMount } from 'svelte';
+  import { monitorsApi, incidentsApi, checksApi, analyticsApi } from '../lib/services/api';
+  import { push } from 'svelte-spa-router';
 
-  const activeIncidents = 2;
-  const totalMonitors = 15;
-  const activeMonitors = 13;
+  let isLoading = $state(true);
+  let error = $state('');
+
+  let monitors = $state<any[]>([]);
+  let incidents = $state<any[]>([]);
+  type RecentCheck = {
+    id: number;
+    monitor_id: number;
+    check_type: string;
+    status: 'passed' | 'failed' | 'degraded';
+    region?: string | null;
+    response_ms?: number | null;
+    details?: Record<string, any> | null;
+    created_at: string;
+  };
+  let recentChecks = $state<RecentCheck[]>([]);
+  let uptimeStats = $state({
+    overall: 0,
+    today: 0,
+    week: 0,
+    month: 0,
+  });
+
+  const activeMonitorsCount = $derived(Array.isArray(monitors) ? monitors.filter(m => m.status === 'healthy').length : 0);
+  const activeIncidentsCount = $derived(Array.isArray(incidents) ? incidents.filter(i => i.status === 'open' || i.status === 'investigating').length : 0);
+
+  onMount(async () => {
+    await loadDashboardData();
+  });
+
+  async function loadDashboardData() {
+    isLoading = true;
+    error = '';
+    try {
+      // Load all data in parallel
+      const [monitorsData, incidentsData, checksData, uptimeData] = await Promise.all([
+        monitorsApi.getAll().catch(() => []),
+        incidentsApi.getAll().catch(() => []),
+        checksApi.getRecent(5).catch(() => []),
+        analyticsApi.getUptime().catch(() => ({ overall: 0, today: 0, week: 0, month: 0 })),
+      ]);
+
+      monitors = Array.isArray(monitorsData) ? monitorsData : [];
+      incidents = Array.isArray(incidentsData) ? incidentsData : [];
+      recentChecks = Array.isArray(checksData) ? checksData : [];
+      uptimeStats = uptimeData || { overall: 0, today: 0, week: 0, month: 0 };
+    } catch (err: any) {
+      error = err?.message || 'Failed to load dashboard data';
+      monitors = [];
+      incidents = [];
+      recentChecks = [];
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  let timezone = $state('local');
+  const timezones = ['local', 'UTC', 'America/New_York', 'Europe/London', 'Asia/Tokyo'];
+
+  function formatTimestamp(timestamp: string) {
+    const date = new Date(timestamp);
+    const tz = timezone === 'local' ? undefined : timezone;
+    return date.toLocaleString(undefined, { timeZone: tz });
+  }
+
+  function getStatusColor(status: string) {
+    switch (status) {
+      case 'healthy':
+      case 'pass':
+      case 'success':
+        return 'bg-black dark:bg-white text-white dark:text-black';
+      case 'warning':
+      case 'degraded':
+        return 'bg-gray-300 dark:bg-neutral-700 text-black dark:text-white';
+      case 'critical':
+      case 'down':
+      case 'error':
+        return 'bg-black dark:bg-white text-white dark:text-black';
+      default:
+        return 'bg-gray-200 dark:bg-neutral-800 text-black dark:text-white';
+    }
+  }
+
+  function getSeverityLabel(severity: string) {
+    switch (severity) {
+      case 'critical': return 'Critical';
+      case 'warning': return 'Warning';
+      case 'info': return 'Info';
+      default: return severity;
+    }
+  }
 </script>
 
-<div class="p-8 space-y-8 bg-gradient-to-br from-surface-50 to-surface-100 dark:from-surface-950 dark:to-surface-900 min-h-screen">
-  <!-- Header -->
-  <div class="flex justify-between items-center">
-    <div>
-      <h1 class="text-4xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
-        Dashboard
-      </h1>
-      <p class="text-surface-600-400 mt-1">Welcome back, here's your overview</p>
+<div class="p-6 space-y-6">
+  {#if isLoading}
+    <div class="text-center py-12 text-gray-600 dark:text-gray-400">
+      <div class="w-8 h-8 border-2 border-black dark:border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      Loading dashboard...
     </div>
-    <div class="flex gap-3">
-      <button class="btn variant-ghost-surface">
-        <span>📊</span>
-        <span>View Reports</span>
-      </button>
-      <button class="btn variant-filled-primary">
-        <span>+</span>
-        <span>Add Monitor</span>
-      </button>
+  {:else if error}
+    <div class="p-4 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 rounded text-red-600 dark:text-red-400">
+      {error}
     </div>
-  </div>
-
-  <!-- Stats Grid - Modern Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <!-- Overall Uptime -->
-    <div class="card preset-filled-surface-50-950 p-6 border border-surface-200-800 hover:shadow-xl transition-all duration-300 group">
-      <div class="flex items-start justify-between mb-4">
-        <div class="p-3 bg-primary-500/10 rounded-xl group-hover:bg-primary-500/20 transition-colors">
-          <svg class="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+  {:else}
+    <!-- Header -->
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-black dark:text-white">Dashboard</h1>
+        <p class="text-sm text-gray-600 dark:text-gray-400">Monitor timeline uses your selected timezone</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <label for="timezone" class="text-sm text-gray-600 dark:text-gray-400">Timezone</label>
+        <select id="timezone" class="input" bind:value={timezone}>
+          {#each timezones as tz}
+            <option value={tz}>{tz === 'local' ? 'Local Browser Time' : tz}</option>
+          {/each}
+        </select>
+        <button class="btn btn-sm bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onclick={() => push('/monitors')}>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
-        </div>
-        <span class="text-xs font-semibold text-success-500 bg-success-500/10 px-2 py-1 rounded-full">+2.3%</span>
+          <span>Add Monitor</span>
+        </button>
       </div>
-      <p class="text-sm font-medium text-surface-600-400 mb-1">Overall Uptime</p>
-      <p class="text-3xl font-bold text-primary-500 mb-1">{uptimeStats.overall}%</p>
-      <p class="text-xs text-surface-500">Last 30 days</p>
     </div>
 
-    <!-- Active Monitors -->
-    <div class="card preset-filled-surface-50-950 p-6 border border-surface-200-800 hover:shadow-xl transition-all duration-300 group">
-      <div class="flex items-start justify-between mb-4">
-        <div class="p-3 bg-secondary-500/10 rounded-xl group-hover:bg-secondary-500/20 transition-colors">
-          <svg class="w-6 h-6 text-secondary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <span class="text-xs font-semibold text-surface-600-400 bg-surface-200-800 px-2 py-1 rounded-full">{totalMonitors} total</span>
-      </div>
-      <p class="text-sm font-medium text-surface-600-400 mb-1">Active Monitors</p>
-      <p class="text-3xl font-bold mb-1">{activeMonitors}<span class="text-lg text-surface-500">/{totalMonitors}</span></p>
-      <p class="text-xs text-surface-500">{totalMonitors - activeMonitors} inactive</p>
-    </div>
-
-    <!-- Active Incidents -->
-    <div class="card preset-filled-surface-50-950 p-6 border border-surface-200-800 hover:shadow-xl transition-all duration-300 group">
-      <div class="flex items-start justify-between mb-4">
-        <div class="p-3 {activeIncidents > 0 ? 'bg-error-500/10' : 'bg-success-500/10'} rounded-xl group-hover:{activeIncidents > 0 ? 'bg-error-500/20' : 'bg-success-500/20'} transition-colors">
-          <svg class="w-6 h-6 {activeIncidents > 0 ? 'text-error-500' : 'text-success-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-          </svg>
-        </div>
-        {#if activeIncidents > 0}
-          <span class="text-xs font-semibold text-error-500 bg-error-500/10 px-2 py-1 rounded-full animate-pulse">Critical</span>
-        {:else}
-          <span class="text-xs font-semibold text-success-500 bg-success-500/10 px-2 py-1 rounded-full">All Clear</span>
-        {/if}
-      </div>
-      <p class="text-sm font-medium text-surface-600-400 mb-1">Active Incidents</p>
-      <p class="text-3xl font-bold {activeIncidents > 0 ? 'text-error-500' : 'text-success-500'} mb-1">
-        {activeIncidents}
-      </p>
-      <p class="text-xs text-surface-500">{activeIncidents > 0 ? 'Requires attention' : 'No issues'}</p>
-    </div>
-
-    <!-- Today's Uptime -->
-    <div class="card preset-filled-surface-50-950 p-6 border border-surface-200-800 hover:shadow-xl transition-all duration-300 group">
-      <div class="flex items-start justify-between mb-4">
-        <div class="p-3 bg-success-500/10 rounded-xl group-hover:bg-success-500/20 transition-colors">
-          <svg class="w-6 h-6 text-success-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </div>
-        <span class="text-xs font-semibold text-success-500 bg-success-500/10 px-2 py-1 rounded-full">Perfect</span>
-      </div>
-      <p class="text-sm font-medium text-surface-600-400 mb-1">Today's Uptime</p>
-      <p class="text-3xl font-bold text-success-500 mb-1">{uptimeStats.today}%</p>
-      <p class="text-xs text-surface-500">All systems operational</p>
-    </div>
-  </div>
-
-  <!-- Activity Sections -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Recent Checks - Modern Design -->
-    <div class="card preset-filled-surface-50-950 border border-surface-200-800 overflow-hidden">
-      <div class="p-6 border-b border-surface-200-800 bg-gradient-to-r from-primary-500/5 to-transparent">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-xl font-bold">Recent Checks</h2>
-            <p class="text-sm text-surface-600-400 mt-1">Latest monitoring results</p>
-          </div>
-          <button class="btn btn-sm variant-ghost-primary">View All →</button>
-        </div>
-      </div>
-      <div class="p-6 space-y-3">
-        <div class="flex items-center gap-4 p-4 rounded-xl bg-surface-100-900 hover:bg-surface-200-800 transition-colors border border-transparent hover:border-success-500/20">
-          <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-success-500/10 flex items-center justify-center">
-            <svg class="w-5 h-5 text-success-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Overall Uptime -->
+      <div class="card bg-white dark:bg-neutral-950 p-5 border border-gray-200 dark:border-neutral-800">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="p-2 bg-black/10 dark:bg-white/10 rounded-lg">
+            <svg class="w-5 h-5 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
             </svg>
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-sm truncate">api.example.com</p>
-            <p class="text-xs text-surface-600-400">HTTP Check • 2 minutes ago</p>
-          </div>
-          <div class="flex flex-col items-end gap-1">
-            <span class="badge variant-soft-success text-xs">200 OK</span>
-            <span class="text-xs text-surface-500">142ms</span>
-          </div>
+          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Overall Uptime</p>
         </div>
+        <p class="text-3xl font-bold text-black dark:text-white">{(uptimeStats.overall || 0).toFixed(1)}%</p>
+      </div>
 
-        <div class="flex items-center gap-4 p-4 rounded-xl bg-surface-100-900 hover:bg-surface-200-800 transition-colors border border-transparent hover:border-success-500/20">
-          <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-success-500/10 flex items-center justify-center">
-            <svg class="w-5 h-5 text-success-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+      <!-- Active Monitors -->
+      <div class="card bg-white dark:bg-neutral-950 p-5 border border-gray-200 dark:border-neutral-800">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="p-2 bg-black/10 dark:bg-white/10 rounded-lg">
+            <svg class="w-5 h-5 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-sm truncate">www.example.com</p>
-            <p class="text-xs text-surface-600-400">SSL Check • 3 minutes ago</p>
-          </div>
-          <div class="flex flex-col items-end gap-1">
-            <span class="badge variant-soft-success text-xs">Valid</span>
-            <span class="text-xs text-surface-500">89ms</span>
-          </div>
+          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Monitors</p>
         </div>
+        <p class="text-3xl font-bold text-black dark:text-white">{activeMonitorsCount}<span class="text-lg text-gray-500 dark:text-gray-400">/{monitors.length}</span></p>
+      </div>
 
-        <div class="flex items-center gap-4 p-4 rounded-xl bg-surface-100-900 hover:bg-surface-200-800 transition-colors border border-transparent hover:border-warning-500/20">
-          <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-warning-500/10 flex items-center justify-center">
-            <svg class="w-5 h-5 text-warning-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      <!-- Active Incidents -->
+      <div class="card bg-white dark:bg-neutral-950 p-5 border border-gray-200 dark:border-neutral-800">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="p-2 bg-black/10 dark:bg-white/10 rounded-lg">
+            <svg class="w-5 h-5 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-sm truncate">cdn.example.com</p>
-            <p class="text-xs text-surface-600-400">Regional Probe • 5 minutes ago</p>
-          </div>
-          <div class="flex flex-col items-end gap-1">
-            <span class="badge variant-soft-warning text-xs">Slow</span>
-            <span class="text-xs text-surface-500">856ms</span>
-          </div>
+          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Incidents</p>
         </div>
+        <p class="text-3xl font-bold text-black dark:text-white">
+          {activeIncidentsCount}
+        </p>
+      </div>
+
+      <!-- Today's Uptime -->
+      <div class="card bg-white dark:bg-neutral-950 p-5 border border-gray-200 dark:border-neutral-800">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="p-2 bg-black/10 dark:bg-white/10 rounded-lg">
+            <svg class="w-5 h-5 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Today's Uptime</p>
+        </div>
+        <p class="text-3xl font-bold text-black dark:text-white">{(uptimeStats.today || 0).toFixed(1)}%</p>
       </div>
     </div>
 
-    <!-- Active Incidents - Modern Design -->
-    <div class="card preset-filled-surface-50-950 border border-surface-200-800 overflow-hidden">
-      <div class="p-6 border-b border-surface-200-800 {activeIncidents > 0 ? 'bg-gradient-to-r from-error-500/5 to-transparent' : 'bg-gradient-to-r from-success-500/5 to-transparent'}">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-xl font-bold">Active Incidents</h2>
-            <p class="text-sm text-surface-600-400 mt-1">{activeIncidents > 0 ? 'Requires immediate attention' : 'All systems normal'}</p>
-          </div>
-          <button class="btn btn-sm variant-ghost-{activeIncidents > 0 ? 'error' : 'success'}">View All →</button>
+    <!-- Activity Sections -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- Recent Checks -->
+      <div class="card bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800">
+        <div class="p-4 border-b border-gray-200 dark:border-neutral-800 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-black dark:text-white">Recent Checks</h2>
+          <a href="#/monitors" class="text-sm text-black dark:text-white hover:underline">View All</a>
         </div>
-      </div>
-      <div class="p-6 space-y-3">
-        {#if activeIncidents > 0}
-          <div class="p-4 rounded-xl bg-error-500/5 border border-error-500/20 hover:border-error-500/40 transition-colors">
-            <div class="flex items-start gap-3 mb-3">
-              <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-error-500/10 flex items-center justify-center animate-pulse">
-                <svg class="w-4 h-4 text-error-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        <div class="p-4 space-y-2">
+          {#if recentChecks.length === 0}
+            <div class="flex flex-col items-center justify-center py-8">
+              <div class="w-12 h-12 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center mb-2">
+                <svg class="w-6 h-6 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
               </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-2">
-                  <p class="font-semibold">Payment Gateway Timeout</p>
-                  <span class="badge variant-filled-error text-xs">Critical</span>
-                </div>
-                <p class="text-sm text-surface-600-400 mb-2">Started 15 minutes ago</p>
-                <div class="flex items-center gap-2 text-xs text-surface-500">
-                  <span class="flex items-center gap-1">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <p class="text-sm font-medium text-black dark:text-white">No recent checks</p>
+              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Add monitors to see check results</p>
+            </div>
+          {:else}
+            {#each recentChecks as check}
+              <div
+                class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-neutral-900 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                role="button"
+                tabindex="0"
+                onclick={() => check.monitor_id && push(`/monitors/${check.monitor_id}`)}
+                onkeydown={(event) => event.key === 'Enter' && check.monitor_id && push(`/monitors/${check.monitor_id}`)}
+              >
+                <div class="w-8 h-8 rounded-lg bg-black/10 dark:bg-white/10 flex items-center justify-center">
+                  {#if check.status === 'passed'}
+                    <svg class="w-4 h-4 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                    15m downtime
-                  </span>
-                  <span>•</span>
-                  <span>23 failed checks</span>
+                  {:else}
+                    <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  {/if}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="font-medium text-sm truncate text-black dark:text-white">{check.details?.monitor_name || `Monitor #${check.monitor_id}`}</p>
+                  <p class="text-xs text-gray-600 dark:text-gray-400">{check.check_type} · {check.region || 'global'}</p>
+                  <p class="text-xs text-gray-600 dark:text-gray-400">{formatTimestamp(check.created_at)}</p>
+                </div>
+                <div class="text-right">
+                  <span class={`text-xs px-2 py-1 ${getStatusColor(check.status === 'passed' ? 'success' : check.status === 'degraded' ? 'warning' : 'error')} rounded`}>{check.status}</span>
+                  {#if check.response_ms}
+                    <p class="text-xs text-gray-500 dark:text-gray-400">{check.response_ms}ms</p>
+                  {/if}
                 </div>
               </div>
-            </div>
-            <button class="btn btn-sm variant-filled-error w-full">Acknowledge & Investigate</button>
-          </div>
+            {/each}
+          {/if}
+        </div>
+      </div>
 
-          <div class="p-4 rounded-xl bg-warning-500/5 border border-warning-500/20 hover:border-warning-500/40 transition-colors">
-            <div class="flex items-start gap-3 mb-3">
-              <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-warning-500/10 flex items-center justify-center">
-                <svg class="w-4 h-4 text-warning-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      <!-- Active Incidents -->
+      <div class="card bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800">
+        <div class="p-4 border-b border-gray-200 dark:border-neutral-800 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-black dark:text-white">Active Incidents</h2>
+          <a href="#/incidents" class="text-sm text-black dark:text-white hover:underline">View All</a>
+        </div>
+        <div class="p-4 space-y-2">
+          {#if activeIncidentsCount === 0}
+            <div class="flex flex-col items-center justify-center py-8">
+              <div class="w-12 h-12 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center mb-2">
+                <svg class="w-6 h-6 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
               </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-2">
-                  <p class="font-semibold">EU Region Latency</p>
-                  <span class="badge variant-filled-warning text-xs">Warning</span>
-                </div>
-                <p class="text-sm text-surface-600-400 mb-2">Started 2 hours ago</p>
-                <div class="flex items-center gap-2 text-xs text-surface-500">
-                  <span class="flex items-center gap-1">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              <p class="text-sm font-medium text-black dark:text-white">All Systems Operational</p>
+            </div>
+          {:else}
+            {#each incidents.filter(i => i.status === 'open' || i.status === 'investigating').slice(0, 3) as incident}
+              <div
+                class="p-3 rounded-lg bg-gray-100 dark:bg-neutral-900 border border-gray-300 dark:border-neutral-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors"
+                role="button"
+                tabindex="0"
+                onclick={() => push(`/incidents/${incident.id}`)}
+                onkeydown={(event) => event.key === 'Enter' && push(`/incidents/${incident.id}`)}
+              >
+                <div class="flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-black/10 dark:bg-white/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
-                    Avg 856ms
-                  </span>
-                  <span>•</span>
-                  <span>48 slow responses</span>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                      <p class="font-semibold text-sm text-black dark:text-white">{incident.title || 'Incident'}</p>
+                      <span class="text-xs px-2 py-1 {getStatusColor(incident.severity)} rounded">{getSeverityLabel(incident.severity)}</span>
+                    </div>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">{formatTimestamp(incident.created_at)}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <button class="btn btn-sm variant-soft-warning w-full">View Details</button>
-          </div>
-        {:else}
-          <div class="flex flex-col items-center justify-center py-12">
-            <div class="w-16 h-16 rounded-full bg-success-500/10 flex items-center justify-center mb-4">
-              <svg class="w-8 h-8 text-success-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-            <p class="text-lg font-semibold mb-1">All Systems Operational</p>
-            <p class="text-sm text-surface-600-400">No active incidents to display</p>
-          </div>
-        {/if}
+            {/each}
+          {/if}
+        </div>
       </div>
     </div>
-  </div>
+  {/if}
 </div>

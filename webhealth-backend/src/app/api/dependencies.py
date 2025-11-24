@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from __future__ import annotations
-
 from collections.abc import AsyncIterator
 from typing import Annotated, Optional
 
@@ -15,9 +13,11 @@ from app.db.session import get_session
 from app.models.user import User
 from app.services.monitor_service import MonitorService
 from app.services.notification_service import NotificationService
+from app.services.incident_service import IncidentService
 from app.services.security_audit_service import SecurityAuditService
 from app.services.security_check_service import SecurityCheckService
 from app.services.user_service import UserService
+from app.services.settings_service import SettingsService
 
 
 async def get_db_session() -> AsyncIterator[AsyncSession]:
@@ -29,6 +29,12 @@ def get_monitor_service(
     session: Annotated[AsyncSession, Depends(get_db_session)]
 ) -> MonitorService:
     return MonitorService(session)
+
+
+def get_incident_service(
+    session: Annotated[AsyncSession, Depends(get_db_session)]
+) -> IncidentService:
+    return IncidentService(session)
 
 
 def get_user_service(
@@ -60,6 +66,12 @@ def get_security_audit_service(
     ],
 ) -> SecurityAuditService:
     return SecurityAuditService(session, notification_service)
+
+
+def get_settings_service(
+    session: Annotated[AsyncSession, Depends(get_db_session)]
+) -> SettingsService:
+    return SettingsService(session)
 
 
 bearer_scheme = HTTPBearer(auto_error=False)

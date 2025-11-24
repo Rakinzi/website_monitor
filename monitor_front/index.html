@@ -1,18 +1,75 @@
 <!doctype html>
-<html lang="en" data-theme="cerberus" class="dark">
+<html lang="en" class="">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WebHealth - Monitor Dashboard</title>
     <script>
-      // Initialize theme before page loads to prevent flash
       (function() {
         const theme = localStorage.getItem('theme') ||
           (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.classList.add(theme);
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       })();
     </script>
+    <style>
+      /* Black and White Theme */
+      :root {
+        --color-primary-50: #fafafa;
+        --color-primary-100: #f5f5f5;
+        --color-primary-200: #e5e5e5;
+        --color-primary-300: #d4d4d4;
+        --color-primary-400: #a3a3a3;
+        --color-primary-500: #000000;
+        --color-primary-600: #000000;
+        --color-primary-700: #000000;
+        --color-primary-800: #000000;
+        --color-primary-900: #000000;
+        --color-primary-950: #000000;
+
+        --color-secondary-50: #fafafa;
+        --color-secondary-100: #f5f5f5;
+        --color-secondary-200: #e5e5e5;
+        --color-secondary-300: #d4d4d4;
+        --color-secondary-400: #a3a3a3;
+        --color-secondary-500: #525252;
+        --color-secondary-600: #404040;
+        --color-secondary-700: #262626;
+        --color-secondary-800: #171717;
+        --color-secondary-900: #0a0a0a;
+        --color-secondary-950: #000000;
+      }
+
+      .dark {
+        --color-primary-50: #000000;
+        --color-primary-100: #000000;
+        --color-primary-200: #000000;
+        --color-primary-300: #000000;
+        --color-primary-400: #737373;
+        --color-primary-500: #ffffff;
+        --color-primary-600: #ffffff;
+        --color-primary-700: #ffffff;
+        --color-primary-800: #ffffff;
+        --color-primary-900: #fafafa;
+        --color-primary-950: #f5f5f5;
+
+        --color-secondary-50: #000000;
+        --color-secondary-100: #0a0a0a;
+        --color-secondary-200: #171717;
+        --color-secondary-300: #262626;
+        --color-secondary-400: #404040;
+        --color-secondary-500: #a3a3a3;
+        --color-secondary-600: #d4d4d4;
+        --color-secondary-700: #e5e5e5;
+        --color-secondary-800: #f5f5f5;
+        --color-secondary-900: #fafafa;
+        --color-secondary-950: #ffffff;
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>

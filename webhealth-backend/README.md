@@ -35,3 +35,14 @@ MAIL_DEFAULT_SENDER=silverrakinzi@gmail.com
 ```
 
 Set them before starting FastAPI so `NotificationService` can deliver messages to your alert recipients.
+
+## Sample Data
+
+Seed an admin account and example monitors by running:
+
+```bash
+cd webhealth-backend
+uv run python scripts/seed_data.py
+```
+
+This creates an `admin@webhealth.dev / ChangeMe123!` login plus a couple of dummy monitors so you can exercise the UI immediately. Feel free to edit `scripts/seed_data.py` to customize the dummy data.

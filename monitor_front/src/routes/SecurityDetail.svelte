@@ -3,6 +3,7 @@
   import { Progress } from '@skeletonlabs/skeleton-svelte';
   import { onMount } from 'svelte';
   import { monitorsApi, securityApi } from '../lib/services/api';
+  import type { SecurityAuditResponse } from '../lib/services/api';
 
   let { params } = $props<{ params: { id: string } }>();
 
@@ -25,13 +26,7 @@
     security_status?: Status;
   }
 
-  interface SecurityAudit {
-    id: number;
-    monitor_id: number;
-    status: Status;
-    created_at: string;
-    findings: Record<string, any>;
-  }
+  type SecurityAudit = SecurityAuditResponse;
 
   let monitor = $state<Monitor | null>(null);
   let audit = $state<SecurityAudit | null>(null);

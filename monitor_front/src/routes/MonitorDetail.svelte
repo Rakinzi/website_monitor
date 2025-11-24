@@ -100,83 +100,86 @@ let { params } = $props<{ params: { id: string } }>();
 
 <div class="p-6 space-y-6">
   {#if isLoading}
-    <div class="text-center text-surface-600-400">Loading monitor...</div>
+    <div class="text-center text-gray-600 dark:text-gray-400">Loading monitor...</div>
   {:else if error}
-    <div class="p-4 border border-error-500/30 bg-error-500/10 rounded">{error}</div>
+    <div class="p-4 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 rounded text-red-600 dark:text-red-400">{error}</div>
   {:else if monitor}
     <div class="flex justify-between items-center">
       <div class="flex items-center gap-4">
-        <button class="btn variant-ghost-surface" onclick={() => pop()}>
-          ← Back
+        <button class="btn btn-sm bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-black dark:text-white" onclick={() => pop()}>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+          Back
         </button>
         <div>
-          <h1 class="text-3xl font-bold">{monitor.name}</h1>
-          <p class="text-surface-600-400">{monitor.target}</p>
+          <h1 class="text-2xl font-bold text-black dark:text-white">{monitor.name}</h1>
+          <p class="text-gray-600 dark:text-gray-400">{monitor.target}</p>
         </div>
       </div>
       <div class="flex gap-2">
-        <button class="btn variant-ghost-surface">Edit</button>
-        <button class="btn variant-filled-error">Delete</button>
+        <button class="btn btn-sm bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-black dark:text-white">Edit</button>
+        <button class="btn btn-sm bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200">Delete</button>
       </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="card p-6 preset-filled-surface-100-900">
-        <p class="text-sm text-surface-600-400 mb-2">Status</p>
-        <span class={`badge variant-filled-${monitor.status === 'down' ? 'error' : 'success'}`}>
+      <div class="card p-5 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800">
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Status</p>
+        <span class="px-3 py-1 rounded bg-black dark:bg-white text-white dark:text-black text-sm font-medium capitalize">
           {monitor.status}
         </span>
       </div>
-      <div class="card p-6 preset-filled-surface-100-900">
-        <p class="text-sm text-surface-600-400 mb-2">Security</p>
+      <div class="card p-5 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800">
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Security</p>
         <div class="flex items-center gap-2">
-          <span class={`badge variant-soft-${monitor.security_status}`}>{monitor.security_status}</span>
-          <span class="text-xs text-surface-600-400">Last: {formatDate(monitor.last_security_check_at)}</span>
+          <span class="px-3 py-1 rounded bg-black/10 dark:bg-white/10 text-black dark:text-white text-sm font-medium capitalize">{monitor.security_status}</span>
+          <span class="text-xs text-gray-600 dark:text-gray-400">{formatDate(monitor.last_security_check_at)}</span>
         </div>
       </div>
-      <div class="card p-6 preset-filled-surface-100-900">
-        <p class="text-sm text-surface-600-400 mb-2">Interval</p>
-        <p class="text-2xl font-bold">{monitor.interval_seconds}s</p>
+      <div class="card p-5 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800">
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Interval</p>
+        <p class="text-2xl font-bold text-black dark:text-white">{monitor.interval_seconds}s</p>
       </div>
     </div>
 
-    <div class="card p-6 preset-filled-surface-100-900 space-y-4">
+    <div class="card p-6 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 space-y-4">
       <div class="flex items-center justify-between">
-        <h2 class="text-xl font-bold">Security Findings</h2>
-        <button class="btn btn-sm" disabled={auditLoading} onclick={runSecurityCheck}>
-          {auditLoading ? 'Running...' : 'Run security check'}
+        <h2 class="text-xl font-bold text-black dark:text-white">Security Findings</h2>
+        <button class="btn btn-sm bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" disabled={auditLoading} onclick={runSecurityCheck}>
+          {auditLoading ? 'Running...' : 'Run Security Check'}
         </button>
       </div>
       {#if auditError}
-        <div class="p-3 border border-error-500/20 bg-error-500/10 rounded text-sm text-error-600">{auditError}</div>
+        <div class="p-3 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 rounded text-sm text-red-600 dark:text-red-400">{auditError}</div>
       {/if}
       {#if latestAudit}
-        <p class="text-sm text-surface-600-400">Captured {formatDate(latestAudit.created_at)}</p>
-        <pre class="bg-surface-900/5 text-xs rounded p-4 overflow-auto max-h-80">{JSON.stringify(latestFindings, null, 2)}</pre>
+        <p class="text-sm text-gray-600 dark:text-gray-400">Captured {formatDate(latestAudit.created_at)}</p>
+        <pre class="bg-gray-100 dark:bg-neutral-900 text-xs rounded p-4 overflow-auto max-h-80 text-black dark:text-white">{JSON.stringify(latestFindings, null, 2)}</pre>
       {:else}
-        <p class="text-sm text-surface-600-400">No security audits have been recorded yet.</p>
+        <p class="text-sm text-gray-600 dark:text-gray-400">No security audits recorded yet.</p>
       {/if}
     </div>
 
-    <div class="card p-6 preset-filled-surface-100-900 space-y-4">
+    <div class="card p-6 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 space-y-4">
       <div class="flex items-center justify-between">
-        <h2 class="text-xl font-bold">Security Audit History</h2>
-        <button class="btn btn-sm variant-ghost-surface" disabled={auditLoading || !hasMoreAudits} onclick={loadMoreAudits}>
-          {auditLoading ? 'Loading...' : hasMoreAudits ? 'Load more' : 'No more audits'}
+        <h2 class="text-xl font-bold text-black dark:text-white">Security Audit History</h2>
+        <button class="btn btn-sm bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-black dark:text-white" disabled={auditLoading || !hasMoreAudits} onclick={loadMoreAudits}>
+          {auditLoading ? 'Loading...' : hasMoreAudits ? 'Load More' : 'No More'}
         </button>
       </div>
       <div class="space-y-3">
         {#each audits as auditItem}
-          <div class="border border-surface-200-800 rounded-lg p-4 flex items-center justify-between">
+          <div class="border border-gray-200 dark:border-neutral-800 rounded-lg p-4 flex items-center justify-between bg-gray-50 dark:bg-neutral-900">
             <div>
-              <p class="text-sm font-semibold">{formatDate(auditItem.created_at)}</p>
-              <p class="text-xs text-surface-600-400">Status: {auditItem.status}</p>
+              <p class="text-sm font-semibold text-black dark:text-white">{formatDate(auditItem.created_at)}</p>
+              <p class="text-xs text-gray-600 dark:text-gray-400">Status: {auditItem.status}</p>
             </div>
-            <span class={`badge variant-filled-${auditItem.status}`}>{auditItem.status}</span>
+            <span class="px-3 py-1 rounded bg-black dark:bg-white text-white dark:text-black text-sm font-medium capitalize">{auditItem.status}</span>
           </div>
         {/each}
         {#if !audits.length}
-          <p class="text-sm text-surface-600-400">No audits yet.</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400">No audits yet.</p>
         {/if}
       </div>
     </div>

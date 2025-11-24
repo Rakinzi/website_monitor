@@ -11,7 +11,9 @@
   import MonitorDetail from './routes/MonitorDetail.svelte';
   import Incidents from './routes/Incidents.svelte';
   import Settings from './routes/Settings.svelte';
-  import Login from './routes/Login.svelte';
+import Login from './routes/Login.svelte';
+import Register from './routes/Register.svelte';
+  import Test from './routes/Test.svelte';
 
 
 
@@ -28,7 +30,7 @@
 
   $effect(() => {
     if (typeof window === 'undefined') return;
-    if ($location === '/login') {
+    if ($location === '/login' || $location === '/register') {
       document.body.classList.add('no-scroll');
     } else {
       document.body.classList.remove('no-scroll');
@@ -59,12 +61,14 @@
     '/incidents': protectedRoute(Incidents),
     '/incidents/:id': protectedRoute(Incidents), // Will create detail page later
     '/settings': protectedRoute(Settings),
+    '/test': protectedRoute(Test),
     '/login': Login,
+    '/register': Register,
   };
 
   // Conditional layout wrapper
   function conditionalLayout(routeLoaded: any) {
-    if (isAuthenticated && routeLoaded.route !== '/login') {
+    if (isAuthenticated && routeLoaded.route !== '/login' && routeLoaded.route !== '/register') {
       return {
         component: DashboardLayout,
       };

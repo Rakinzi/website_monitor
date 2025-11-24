@@ -17,3 +17,4 @@ from app.models import heartbeat  # noqa: E402,F401
 from app.models import escalation  # noqa: E402,F401
 from app.models import user  # noqa: E402,F401
 from app.models import security_audit  # noqa: E402,F401
+from app.models import settings  # noqa: E402,F401
